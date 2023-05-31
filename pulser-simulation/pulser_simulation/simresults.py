@@ -28,7 +28,7 @@ import qutip
 from numpy.typing import ArrayLike
 from qutip.piqs import isdiagonal
 
-from pulser.result import Results, ResultType, SampledResult
+from pulser.result import Result, Results, ResultType, SampledResult
 from pulser_simulation.qutip_result import QutipResult
 
 
@@ -531,27 +531,8 @@ class CoherentResults(SimulationResults):
         if eps_p == 0.0 and eps == 0.0:
             return sampled_state
 
-        for shot, n_detects in sampled_state.items():
-            # Shot as an array of 1s and 0s
-            shot_arr = np.array(list(shot), dtype=int)
-
-            # Probability of flipping each bit
-            flip_probs = np.where(shot_arr == 1, eps_p, eps)
-
-            # 1 if it flips, 0 if it stays the same
-            flips = (
-                np.random.uniform(size=(n_detects, len(flip_probs)))
-                < flip_probs
-            )
-
-            # XOR betwen the original array and the flips
-            # Gives an array of n_detects individual shots
-            new_shots = shot_arr ^ flips
-
-            # Count all the new_shots
-            for x in new_shots:
-                detected_sample_dict[tuple(x)] += 1
-
-        return Counter(
-            {"".join(map(str, k)): v for k, v in detected_sample_dict.items()}
+        t_index = self._get_index_from_time(t, t_tol)
+        custom_weights = np.abs(self._calc_pseudo_density(t_index).diag())
+        return Result.get_samples_from_weights(
+            n_samples, custom_weights, self._size
         )

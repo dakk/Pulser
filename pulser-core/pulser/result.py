@@ -77,12 +77,15 @@ class Result(ABC):
         Returns:
             Samples of bitstrings corresponding to measured quantum states.
         """
-        dist = np.random.multinomial(n_samples, self._weights())
+        return Result.get_samples_from_weights(
+            n_samples, self._weights(), self._size
+        )
+
+    @staticmethod
+    def get_samples_from_weights(n_samples: int, weights: np.ndarray, size):
+        dist = np.random.multinomial(n_samples, weights)
         return Counter(
-            {
-                np.binary_repr(i, self._size): dist[i]
-                for i in np.nonzero(dist)[0]
-            }
+            {np.binary_repr(i, size): dist[i] for i in np.nonzero(dist)[0]}
         )
 
     def get_state(self) -> Any:
